@@ -1,0 +1,27 @@
+{
+  "name": "root-productivity-analytics",
+  "version": "1.0.0",
+  "description": "Wraps mixpanel for use in CLIs",
+  "main": "index.js",
+  "author": "Root Developers",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "commander": "^5.1.0",
+    "mixpanel": "^0.11.0",
+    "uuid": "^8.1.0",
+    "uuidv4": "^6.1.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.3.1",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.21.2",
+    "eslint-plugin-jest": "^23.17.1",
+    "jest": "^26.1.0",
+    "wait-for-expect": "^3.0.2"
+  },
+  "bin": "./bin/root-productivity-analytics.js"
+}
