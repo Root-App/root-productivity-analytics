@@ -96,5 +96,103 @@ describe('MixpanelWrapper', () => {
         }),
       );
     });
+
+    describe('stored events', () => {
+      beforeEach(async () => {
+        await MixpanelWrapper.upsertIdentity();
+      });
+
+      describe('when the stored events file exists', () => {
+        beforeEach(() => {
+          fs.existsSync.mockReturnValue(true);
+        });
+
+        it('does not create the file', () => {
+          MixpanelWrapper.logEvent('test-event-name', {}, { storedEvent: { action: 'create' } });
+          expect(fs.writeFileSync).not.toHaveBeenCalledWith(
+            MixpanelWrapper.getStoredEventsPath(),
+            JSON.stringify({}),
+          );
+        });
+      });
+
+      describe('when the stored events file does not exist', () => {
+        beforeEach(() => {
+          fs.existsSync.mockReturnValue(false);
+        });
+
+        it('creates the file', () => {
+          MixpanelWrapper.logEvent('test-event-name', {}, { storedEvent: { action: 'create' } });
+          expect(fs.writeFileSync).toHaveBeenCalledWith(
+            MixpanelWrapper.getStoredEventsPath(),
+            JSON.stringify({}),
+          );
+        });
+      });
+
+      describe('create action', () => {
+        beforeEach(async () => {
+          fs.existsSync.mockReturnValue(true);
+          fs.readFileSync.mockImplementation((path) => {
+            if (path === MixpanelWrapper.getIdentifierCompletePath()) {
+              return JSON.stringify({
+                uuid: 1234,
+              });
+            }
+
+            return JSON.stringify({});
+          });
+          await MixpanelWrapper.upsertIdentity();
+        });
+
+        it('saves data to store events file as expected', () => {
+          MixpanelWrapper.logEvent('test-event-name', {}, { storedEvent: { action: 'create' } });
+          expect(fs.writeFileSync).toHaveBeenCalledWith(
+            MixpanelWrapper.getStoredEventsPath(),
+            expect.stringContaining('test-event-name'),
+          );
+        });
+
+        it('calls track with stored_event_uuid', () => {
+          MixpanelWrapper.logEvent('test-event-name', {}, { storedEvent: { action: 'create' } });
+          expect(MixpanelWrapper._mixpanelInstance.track).toHaveBeenCalledWith(
+            'test-event-name',
+            expect.objectContaining({
+              distinct_id: 1234,
+              stored_event_uuid: 1,
+            }),
+          );
+        });
+      });
+
+      describe('append action', () => {
+        beforeEach(async () => {
+          fs.existsSync.mockReturnValue(true);
+          fs.readFileSync.mockImplementation((path) => {
+            if (path === MixpanelWrapper.getIdentifierCompletePath()) {
+              return JSON.stringify({
+                uuid: 1234,
+              });
+            }
+
+            return JSON.stringify({
+              'test-event-name': '12345',
+            });
+          });
+          await MixpanelWrapper.upsertIdentity();
+        });
+
+        it('calls track with expected data', () => {
+          MixpanelWrapper.logEvent('test-event-name', {}, { storedEvent: { action: 'append' } });
+          expect(MixpanelWrapper._mixpanelInstance.track).toHaveBeenCalledWith(
+            'test-event-name',
+            expect.objectContaining({
+              distinct_id: 1234,
+              stored_event_uuid: '12345',
+            }),
+          );
+        });
+      });
+    });
   });
 });
