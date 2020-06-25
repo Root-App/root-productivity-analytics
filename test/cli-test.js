@@ -3,6 +3,8 @@ const cli = require('../cli');
 const MixpanelWrapper = require('../index');
 
 jest.mock('../index');
+// eslint-disable-next-line global-require
+jest.mock('mixpanel', () => require('../mocks/mixpanel-mock'));
 
 describe('cli', () => {
   beforeEach(() => {
@@ -19,6 +21,30 @@ describe('cli', () => {
 
       await waitForExpect(() => {
         expect(MixpanelWrapper.logEvent).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('log with stored action', () => {
+    it('calls MixpanelWrapper with storedEvent option', async () => {
+      cli.parse(['log', '-e', 'testEvent', '-m', '{"test": "asdf"}', '-sea', 'create'], {
+        from: 'user',
+      });
+
+      expect(MixpanelWrapper.upsertIdentity).toHaveBeenCalled();
+
+      await waitForExpect(() => {
+        expect(MixpanelWrapper.logEvent).toHaveBeenCalledWith(
+          'testEvent',
+          {
+            test: 'asdf',
+          },
+          {
+            storedEvent: {
+              action: 'create',
+            },
+          }
+        );
       });
     });
   });
